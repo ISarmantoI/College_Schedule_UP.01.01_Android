@@ -13,21 +13,27 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.example.collegeshedule.data.dto.GroupDto
 import com.example.collegeshedule.data.dto.ScheduleByDateDto
 import com.example.collegeshedule.data.network.RetrofitInstance
+import com.example.collegeshedule.data.preferences.FavoritesManager
 import com.example.collegeshedule.ui.components.GroupDropdown
 import com.example.collegeshedule.ui.shedule.ScheduleList
 import com.example.collegeshedule.utils.getWeekDateRange
 
 @Composable
-fun ScheduleScreen() {
+fun ScheduleScreen(preselectedGroup: String? = null) {
+    val context = LocalContext.current
+    val favoritesManager = remember { FavoritesManager(context) }
+    
     var groups by remember { mutableStateOf<List<GroupDto>>(emptyList()) }
-    var selectedGroup by remember { mutableStateOf<String?>(null) }
+    var selectedGroup by remember { mutableStateOf(preselectedGroup) }
     var schedule by remember { mutableStateOf<List<ScheduleByDateDto>>(emptyList()) }
     var loading by remember { mutableStateOf(true) }
     var error by remember { mutableStateOf<String?>(null) }
+    var isFavorite by remember { mutableStateOf(false) }
     
     LaunchedEffect(Unit) {
         try {
@@ -39,8 +45,15 @@ fun ScheduleScreen() {
         }
     }
     
+    LaunchedEffect(preselectedGroup) {
+        preselectedGroup?.let {
+            selectedGroup = it
+        }
+    }
+    
     LaunchedEffect(selectedGroup) {
         selectedGroup?.let { group ->
+            isFavorite = favoritesManager.isFavorite(group)
             val (start, end) = getWeekDateRange()
             try {
                 schedule = RetrofitInstance.api.getSchedule(group, start, end)
@@ -58,7 +71,18 @@ fun ScheduleScreen() {
                 GroupDropdown(
                     groups = groups,
                     selectedGroup = selectedGroup,
-                    onGroupSelected = { selectedGroup = it }
+                    onGroupSelected = { selectedGroup = it },
+                    isFavorite = isFavorite,
+                    onToggleFavorite = {
+                        selectedGroup?.let { group ->
+                            if (isFavorite) {
+                                favoritesManager.removeFavorite(group)
+                            } else {
+                                favoritesManager.addFavorite(group)
+                            }
+                            isFavorite = !isFavorite
+                        }
+                    }
                 )
                 
                 Spacer(modifier = Modifier.height(16.dp))

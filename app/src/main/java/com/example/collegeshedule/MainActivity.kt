@@ -22,9 +22,12 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.PreviewScreenSizes
 import com.example.collegeshedule.data.api.ScheduleApi
+import com.example.collegeshedule.data.preferences.FavoritesManager
 import com.example.collegeshedule.data.repository.ScheduleRepository
+import com.example.collegeshedule.ui.favorites.FavoritesScreen
 import com.example.collegeshedule.utils.ScheduleScreen
 import com.example.collegeshedule.ui.theme.CollegeSheduleTheme
 import retrofit2.Retrofit
@@ -45,6 +48,11 @@ class MainActivity : ComponentActivity() {
 fun CollegeScheduleApp() {
     var currentDestination by rememberSaveable {
         mutableStateOf(AppDestinations.HOME) }
+    var selectedGroupForSchedule by remember { mutableStateOf<String?>(null) }
+    val context = LocalContext.current
+    val favoritesManager = remember { FavoritesManager(context) }
+    var favorites by remember { mutableStateOf(favoritesManager.getFavorites()) }
+    
     val retrofit = remember {
         Retrofit.Builder()
             .baseUrl("http://10.0.2.2:5144") // localhost для Android Emulator
@@ -66,17 +74,33 @@ fun CollegeScheduleApp() {
                     },
                     label = { Text(it.label) },
                     selected = it == currentDestination,
-                    onClick = { currentDestination = it }
+                    onClick = { 
+                        currentDestination = it
+                        if (it == AppDestinations.FAVORITES) {
+                            favorites = favoritesManager.getFavorites()
+                        }
+                    }
                 )
             }
         }
     ) {
         Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
             when (currentDestination) {
-                AppDestinations.HOME -> ScheduleScreen()
-                AppDestinations.FAVORITES ->
-                    Text("Избранные группы", modifier =
-                        Modifier.padding(innerPadding))
+                AppDestinations.HOME -> {
+                    ScheduleScreen(preselectedGroup = selectedGroupForSchedule)
+                    selectedGroupForSchedule = null
+                }
+                AppDestinations.FAVORITES -> FavoritesScreen(
+                    favorites = favorites,
+                    onRemoveFavorite = { groupName ->
+                        favoritesManager.removeFavorite(groupName)
+                        favorites = favoritesManager.getFavorites()
+                    },
+                    onViewSchedule = { groupName ->
+                        selectedGroupForSchedule = groupName
+                        currentDestination = AppDestinations.HOME
+                    }
+                )
                 AppDestinations.PROFILE ->
                     Text("Профиль студента", modifier =
                         Modifier.padding(innerPadding))
