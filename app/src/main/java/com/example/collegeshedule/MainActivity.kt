@@ -3,13 +3,20 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountBox
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Home
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import com.example.collegeshedule.utils.ScheduleScreen
@@ -20,10 +27,13 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.PreviewScreenSizes
+import androidx.compose.ui.unit.dp
 import com.example.collegeshedule.data.api.ScheduleApi
 import com.example.collegeshedule.data.preferences.FavoritesManager
 import com.example.collegeshedule.data.repository.ScheduleRepository
@@ -63,6 +73,7 @@ fun CollegeScheduleApp() {
     val api = remember { retrofit.create(ScheduleApi::class.java) }
     val repository = remember { ScheduleRepository(api) }
     NavigationSuiteScaffold(
+        containerColor = MaterialTheme.colorScheme.surface,
         navigationSuiteItems = {
             AppDestinations.entries.forEach {
                 item(
@@ -84,7 +95,10 @@ fun CollegeScheduleApp() {
             }
         }
     ) {
-        Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
+        Scaffold(
+            modifier = Modifier.fillMaxSize(),
+            containerColor = MaterialTheme.colorScheme.background
+        ) { innerPadding ->
             when (currentDestination) {
                 AppDestinations.HOME -> {
                     ScheduleScreen(preselectedGroup = selectedGroupForSchedule)
